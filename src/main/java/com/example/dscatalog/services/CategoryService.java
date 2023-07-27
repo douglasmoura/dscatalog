@@ -5,12 +5,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.dscatalog.dto.CategoryDTO;
 import com.example.dscatalog.entities.Category;
 import com.example.dscatalog.repositories.CategoryRepository;
+import com.example.dscatalog.services.exceptions.DataBaseException;
 import com.example.dscatalog.services.exceptions.ResourceNotFoundException;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -34,7 +37,7 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public CategoryDTO findById(Long id) throws ResourceNotFoundException {
+    public CategoryDTO findById(Long id) {
 
         Optional<Category> obj = repository.findById(id);
 
@@ -54,7 +57,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryDTO update(Long id, CategoryDTO dto) throws ResourceNotFoundException {
+    public CategoryDTO update(Long id, CategoryDTO dto) {
         try {
             Category entity = repository.getReferenceById(id);
             entity.setName(dto.getName());
@@ -63,6 +66,16 @@ public class CategoryService {
             return new CategoryDTO(entity);
         } catch (EntityNotFoundException error) {
             throw new ResourceNotFoundException("Id not found " + id);
+        }
+    }
+
+    public void delete(Long id) {
+        try {
+            repository.deleteById(id);
+        } catch (EmptyResultDataAccessException error) {
+            throw new ResourceNotFoundException("Id not found " + id);
+        } catch (DataIntegrityViolationException error) {
+            throw new DataBaseException("Integrity violation");
         }
     }
 
